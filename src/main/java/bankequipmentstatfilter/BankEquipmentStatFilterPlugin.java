@@ -24,9 +24,9 @@ import java.util.Comparator;
 import java.util.Objects;
 
 @PluginDescriptor(
-		name = "Bank Stat Filter",
+		name = "Bank Equipment Stat Filter",
 		description = "Allows to filter/sort for equipment slot/stat",
-		tags = {"bank", "stat", "filter"}
+		tags = {"bank", "stat", "equipment", "filter"}
 )
 @Slf4j
 public class BankEquipmentStatFilterPlugin extends Plugin
@@ -87,7 +87,7 @@ public class BankEquipmentStatFilterPlugin extends Plugin
 		final BufferedImage icon = ImageUtil.loadImageResource(BankEquipmentStatFilterPlugin.class, "pluginIcon.png");
 
 		navButton = NavigationButton.builder()
-				.tooltip("Bank Stat Filtering")
+				.tooltip("Bank Equipment Stat Filtering")
 				.icon(icon)
 				.panel(panel)
 				.priority(6)
