@@ -96,6 +96,12 @@ public class BankEquipmentStatFilterPlugin extends Plugin
 		clientToolbar.addNavigation(navButton);
 	}
 
+	@Override
+	protected void shutDown()
+	{
+		clientToolbar.removeNavigation(navButton);
+	}
+
 	public void bankFilter(EquipmentInventorySlot slot, EquipmentStat statType)
 	{
 		if (items == null) {
