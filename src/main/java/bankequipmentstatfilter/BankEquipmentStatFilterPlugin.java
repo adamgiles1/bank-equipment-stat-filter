@@ -4,12 +4,9 @@ import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.ItemContainerChanged;
-import net.runelite.client.callback.ClientThread;
-import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
-import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
@@ -19,9 +16,8 @@ import net.runelite.http.api.item.ItemStats;
 
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @PluginDescriptor(
 		name = "Bank Equipment Stat Filter",
@@ -35,22 +31,10 @@ public class BankEquipmentStatFilterPlugin extends Plugin
 	private Client client;
 
 	@Inject
-	private BankEquipmentStatFilterConfig config;
-
-	@Inject
 	private ItemManager itemManager;
 
 	@Inject
-	private KeyManager keyManager;
-
-	@Inject
-	private ChatMessageManager chatMessageManager;
-
-	@Inject
 	private ClientToolbar clientToolbar;
-
-	@Inject
-	private ClientThread clientThread;
 
 	private BankEquipmentStatFilterPanel panel;
 
@@ -102,18 +86,22 @@ public class BankEquipmentStatFilterPlugin extends Plugin
 		clientToolbar.removeNavigation(navButton);
 	}
 
-	public void bankFilter(EquipmentInventorySlot slot, EquipmentStat statType)
+	public void bankFilter(EquipmentInventorySlot slot, EquipmentStat statType, boolean allSlots)
 	{
 		if (items == null) {
 			panel.displayMessage("You need to open your bank once so the plugin can sync with it");
 			return;
 		}
 
-		final ItemWithStat[] sortedItems = Arrays.stream(items)
-				.filter(item -> getItemStat(item.getStats(), statType) > 0 && item.getStats().getEquipment().getSlot() == slot.getSlotIdx())
-				.sorted(Comparator.comparing(item -> getItemStat(((ItemWithStat) item).getStats(), statType)).reversed())
-				.toArray(ItemWithStat[]::new);
 
+		Map<Integer, List<ItemWithStat>> sortedItems = Arrays.stream(items)
+				.filter(item -> getItemStat(item.getStats(), statType) > 0 && (item.getStats().getEquipment().getSlot() == slot.getSlotIdx() || allSlots))
+				.collect(Collectors.groupingBy(item -> item.getStats().getEquipment().getSlot()));
+
+		sortedItems.forEach((slotIdx, slotItems) -> {
+			// Mutate the list to sort it by the stat
+			slotItems.sort(Comparator.comparing(item -> getItemStat(item.getStats(), statType), Comparator.reverseOrder()));
+		});
 		panel.displayItems(sortedItems, statType);
 	}
 

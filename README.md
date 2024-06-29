@@ -5,12 +5,12 @@ Forget what your best magic attack bonus helmet is? This plugin will show you al
 items in your bank for a particular slot that gives the bonus from highest to lowest, so you
 can quickly tell which one you want to use.
 
-![img.png](exampleFilter.png)
+![img.png](exampleFilterV2.png)
 
 # Usage
 Open up the panel with this icon
 ![img.png](icon.png)
-, and then use the drop downs to select the stat and slot you want to search for. After selecting
+, and then use the drop downs to select the stat and slot you want to search for. You can also view all slots at once. After selecting
 your values, press "View Items" and it will show you all the items in your bank with a positive
 value in that stat and slot, sorted from highest to lowest. You can hover over an item to see
 its name and value for the selected stat
