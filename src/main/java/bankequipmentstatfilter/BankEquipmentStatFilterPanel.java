@@ -12,6 +12,9 @@ import javax.inject.Singleton;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Singleton
 @Slf4j
@@ -27,6 +30,9 @@ public class BankEquipmentStatFilterPanel extends PluginPanel
     @Inject
     BankEquipmentStatFilterPlugin plugin;
 
+    @Inject
+    BankEquipmentStatFilterConfig config;
+
     JPanel itemsPanel;
 
     JComboBox<EquipmentStat> statDropDown;
@@ -41,7 +47,7 @@ public class BankEquipmentStatFilterPanel extends PluginPanel
         JPanel selectionPanel = new JPanel();
         selectionPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         selectionPanel.setBorder(new EmptyBorder(10, 0, 10, 0));
-        selectionPanel.setLayout(new GridLayout(3, 2));
+        selectionPanel.setLayout(new GridLayout(0, 2));
 
         // Select Stat
         JLabel statLabel = new JLabel();
@@ -61,13 +67,31 @@ public class BankEquipmentStatFilterPanel extends PluginPanel
         slotDropDown.setFocusable(false);
         selectionPanel.add(slotDropDown);
 
-        selectionPanel.add(new JLabel());
+        // All Options at once
+        JCheckBox allOptions = new JCheckBox();
+        allOptions.setFocusable(false);
+        allOptions.setText("Show all slots");
+
+        allOptions.addActionListener((actionEvent) ->
+        {
+            if (allOptions.isSelected())
+            {
+                slotDropDown.setEnabled(false);
+            }
+            else
+            {
+                slotDropDown.setEnabled(true);
+            }
+        });
+        allOptions.setSelected(true);
+
+        selectionPanel.add(allOptions);
 
         // Button to search bank
         JButton filterButton = new JButton();
         filterButton.addActionListener((actionEvent) ->
         {
-            plugin.bankFilter((EquipmentInventorySlot) slotDropDown.getSelectedItem(), (EquipmentStat) statDropDown.getSelectedItem());
+            plugin.bankFilter((EquipmentInventorySlot) slotDropDown.getSelectedItem(), (EquipmentStat) statDropDown.getSelectedItem(), allOptions.isSelected());
             repaint();
         });
         filterButton.setText("View Items");
@@ -79,20 +103,74 @@ public class BankEquipmentStatFilterPanel extends PluginPanel
         itemsPanel = new JPanel();
         itemsPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
         itemsPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        itemsPanel.setLayout(new BoxLayout(itemsPanel, BoxLayout.Y_AXIS));
 
-        add(itemsPanel, BorderLayout.SOUTH);
+        add(itemsPanel);
     }
 
-    public void displayItems(ItemWithStat[] items, EquipmentStat statType)
+    public void displayItems(Map<Integer, List<ItemWithStat>> items, EquipmentStat statType, boolean allSlots)
     {
+
         itemsPanel.removeAll();
 
-        final int rowCorrection = items.length % COLUMN_SIZE > 0 ? 1 : 0;
-        final int rowSize = items.length/COLUMN_SIZE + rowCorrection;
-        itemsPanel.setLayout(new GridLayout(rowSize, COLUMN_SIZE, 1, 1));
+        int itemCount = 0;
+        // loop through items
+        for(Map.Entry<Integer, List<ItemWithStat>> entry : items.entrySet()) {
+            Integer slotIdx = entry.getKey();
+            List<ItemWithStat> slotItems;
 
-        if (items.length > 0)
+            // Only apply the limit when we are showing all slots
+            if (allSlots) {
+                slotItems = entry.getValue()
+                        .stream().limit(config.maxItemsPerSlot())
+                        .collect(Collectors.toList());
+            } else {
+                slotItems = entry.getValue();
+            }
+
+            PaintGroup(slotItems, statType, slotIdx);
+            itemCount += slotItems.size();
+        }
+        if (itemCount == 0){
+            displayMessage("No items found.");
+        }
+
+
+        repaint();
+        revalidate();
+    }
+
+    public EquipmentInventorySlot getEquipmentInventorySlot(int slotIdx) {
+        for (EquipmentInventorySlot slot : EquipmentInventorySlot.values()) {
+            if (slot.getSlotIdx() == slotIdx) {
+                return slot;
+            }
+        }
+        return null;
+    }
+
+    private void PaintGroup(List<ItemWithStat> items, EquipmentStat statType, Integer slotIdx){
+        if (!items.isEmpty())
         {
+            //print item names
+
+            JPanel titlePanel = new JPanel();
+            titlePanel.setLayout(new BorderLayout());
+
+            //Get slot name
+            JLabel slotLabel = new JLabel();
+            slotLabel.setText(getEquipmentInventorySlot(slotIdx).name());
+            slotLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+            // Add to panel
+            titlePanel.add(slotLabel, BorderLayout.CENTER);
+            itemsPanel.add(titlePanel);
+
+            JPanel itemContainer = new JPanel();
+            itemContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
+            itemContainer.setBorder(new EmptyBorder(10, 10, 10, 10));
+            itemContainer.setLayout(new GridLayout(0, COLUMN_SIZE, 1, 1));
+
             for (ItemWithStat item : items) {
                 JPanel itemPanel = new JPanel();
                 JLabel itemLabel = new JLabel();
@@ -108,23 +186,25 @@ public class BankEquipmentStatFilterPanel extends PluginPanel
                 itemPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
                 itemPanel.add(itemLabel);
-                itemsPanel.add(itemPanel);
+                itemContainer.add(itemPanel);
+            }
+            if (items.size() % COLUMN_SIZE != 0)
+            {
+                for (int i = 0; i < COLUMN_SIZE - (items.size() % COLUMN_SIZE); i++)
+                {
+                    JPanel panel = new JPanel();
+                    panel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+                    itemContainer.add(panel);
+                }
             }
 
-            padItemsPanel((rowSize * COLUMN_SIZE) % items.length);
-        } else
-        {
-            displayMessage("No matching items found");
+            itemsPanel.add(itemContainer);
         }
-
-        repaint();
-        revalidate();
     }
 
     public void displayMessage(final String message)
     {
         itemsPanel.removeAll();
-        itemsPanel.setLayout(new BorderLayout());
 
         final JTextArea textArea = new JTextArea();
         textArea.setText(message);
@@ -137,15 +217,5 @@ public class BankEquipmentStatFilterPanel extends PluginPanel
 
         repaint();
         revalidate();
-    }
-
-    private void padItemsPanel(final int padAmt)
-    {
-        for (int i = 0; i < padAmt; i++)
-        {
-            JPanel panel = new JPanel();
-            panel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-            itemsPanel.add(panel);
-        }
     }
 }
