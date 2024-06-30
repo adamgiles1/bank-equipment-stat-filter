@@ -108,7 +108,7 @@ public class BankEquipmentStatFilterPanel extends PluginPanel
         add(itemsPanel);
     }
 
-    public void displayItems(Map<Integer, List<ItemWithStat>> items, EquipmentStat statType)
+    public void displayItems(Map<Integer, List<ItemWithStat>> items, EquipmentStat statType, boolean allSlots)
     {
 
         itemsPanel.removeAll();
@@ -117,9 +117,17 @@ public class BankEquipmentStatFilterPanel extends PluginPanel
         // loop through items
         for(Map.Entry<Integer, List<ItemWithStat>> entry : items.entrySet()) {
             Integer slotIdx = entry.getKey();
-            List<ItemWithStat> slotItems = entry.getValue()
-                    .stream().limit(config.maxItemsPerSlot())
-                    .collect(Collectors.toList());
+            List<ItemWithStat> slotItems;
+
+            // Only apply the limit when we are showing all slots
+            if (allSlots) {
+                slotItems = entry.getValue()
+                        .stream().limit(config.maxItemsPerSlot())
+                        .collect(Collectors.toList());
+            } else {
+                slotItems = entry.getValue();
+            }
+
             PaintGroup(slotItems, statType, slotIdx);
             itemCount += slotItems.size();
         }

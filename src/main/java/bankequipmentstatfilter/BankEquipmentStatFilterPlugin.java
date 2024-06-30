@@ -102,7 +102,7 @@ public class BankEquipmentStatFilterPlugin extends Plugin
 			// Mutate the list to sort it by the stat
 			slotItems.sort(Comparator.comparing(item -> getItemStat(item.getStats(), statType), Comparator.reverseOrder()));
 		});
-		panel.displayItems(sortedItems, statType);
+		panel.displayItems(sortedItems, statType, allSlots);
 	}
 
 	public int getItemStat(ItemStats stats, EquipmentStat stat)
