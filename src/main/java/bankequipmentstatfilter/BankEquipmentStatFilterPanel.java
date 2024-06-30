@@ -56,6 +56,7 @@ public class BankEquipmentStatFilterPanel extends PluginPanel
 
         statDropDown = new JComboBox<>(EquipmentStat.values());
         statDropDown.setFocusable(false);
+        statDropDown.setRenderer(new EquipmentStatDropdownRenderer());
         selectionPanel.add(statDropDown);
 
         // Select Slot
@@ -65,6 +66,7 @@ public class BankEquipmentStatFilterPanel extends PluginPanel
 
         slotDropDown = new JComboBox<>(EquipmentInventorySlot.values());
         slotDropDown.setFocusable(false);
+        slotDropDown.setRenderer(new SlotDropdownRenderer());
         selectionPanel.add(slotDropDown);
 
         // All Options at once
@@ -217,5 +219,19 @@ public class BankEquipmentStatFilterPanel extends PluginPanel
 
         repaint();
         revalidate();
+    }
+
+    private static class EquipmentStatDropdownRenderer extends DefaultListCellRenderer {
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            value = ((EquipmentStat) value).getDisplayName();
+            return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        }
+    }
+
+    private static class SlotDropdownRenderer extends DefaultListCellRenderer {
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            value = value.toString().substring(0, 1).toUpperCase() + value.toString().substring(1).toLowerCase();
+            return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        }
     }
 }
